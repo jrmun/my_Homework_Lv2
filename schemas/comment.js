@@ -7,14 +7,14 @@ const commentSchemas = new mongoose.Schema({
     unique: true,
   },
   postId: {
+    type: String,
+    unique: false,
+  },
+  post_cmtId: {
     type: Number,
     required: true,
   },
   cmtName: {
-    type: String,
-    required: true,
-  },
-  password: {
     type: String,
     required: true,
   },
@@ -23,6 +23,10 @@ const commentSchemas = new mongoose.Schema({
   },
   cmtDate: {
     type: Date,
+  },
+  userId: {
+    type: String,
+    required: true,
   },
 });
 

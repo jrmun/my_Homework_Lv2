@@ -1,9 +1,7 @@
 const express = require("express");
-const crypto = require("crypto");
 const router = express.Router();
 const posts = require("../schemas/post.js");
-
-const salt = crypto.randomBytes(32).toString("base64");
+const authMiddleware = require("../middlewares/auth-middleware.js");
 
 router.get("/posts/:postId", async (req, res) => {
   const { postId } = req.params;
@@ -25,46 +23,35 @@ router.get("/posts/:postId", async (req, res) => {
   }
 });
 
-router.post("/posts", async (req, res) => {
-  const { postId, postTitle, name, password: pas, postContent } = req.body;
-
-  const password = crypto
-    .pbkdf2Sync(pas, salt, 1, 32, "sha512")
-    .toString("base64");
-
+router.post("/posts", authMiddleware, async (req, res) => {
+  const { postTitle, postContent } = req.body;
+  const name = res.locals.user.nickname;
   const date = new Date();
-  const existsPost = await posts.find({ postId: Number(postId) });
-  if (existsPost.length) {
-    return res
-      .status(400)
-      .json({ success: false, errorMessage: "이미 존재하는 postId입니다." });
-  }
+  const userId = res.locals.user._id;
+  const maxpostIdByUserId = await posts.findOne().sort("-postId").exec();
+  const postId = maxpostIdByUserId ? maxpostIdByUserId.postId + 1 : 1;
   const createdPost = await posts.create({
     postId,
     postTitle,
     name,
-    password,
     postContent,
     date,
+    userId,
   });
 
   res.json({ posts: createdPost });
 });
 
-router.put("/posts/:postId", async (req, res) => {
+router.put("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
-  const { postTitle, name, password: pas, postContent } = req.body;
-
-  const password = crypto
-    .pbkdf2Sync(pas, salt, 1, 32, "sha512")
-    .toString("base64");
-
-  const existsPosts = await posts.find({ postId: Number(postId) });
+  const { postTitle, postContent } = req.body;
+  const userId = res.locals.user._id;
+  const existsPosts = await posts.find({ postId: postId });
   if (existsPosts.length) {
-    if (existsPosts[0].password === password) {
+    if (existsPosts[0].userId === String(userId)) {
       await posts.updateOne(
         { postId: Number(postId) },
-        { $set: { postTitle, name, postContent } }
+        { $set: { postTitle, postContent } }
       );
       res.json({ success: true });
     } else {
@@ -73,17 +60,12 @@ router.put("/posts/:postId", async (req, res) => {
   }
 });
 
-router.delete("/posts/:postId", async (req, res) => {
+router.delete("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
-  const { password: pas } = req.body;
-
-  const password = crypto
-    .pbkdf2Sync(pas, salt, 1, 32, "sha512")
-    .toString("base64");
-
+  const userId = res.locals.user._id;
   const existsPosts = await posts.find({ postId: Number(postId) });
   if (existsPosts.length > 0) {
-    if (existsPosts[0].password === password) {
+    if (existsPosts[0].userId === String(userId)) {
       await posts.deleteOne({ postId });
       res.json({ result: "success" });
     }

@@ -14,16 +14,16 @@ const postsSchemas = new mongoose.Schema({
     type: String,
     required: true,
   },
-  password: {
-    type: String,
-    required: true,
-  },
   postContent: {
     type: String,
     required: true,
   },
   date: {
     type: Date,
+  },
+  userId: {
+    type: String,
+    required: true,
   },
 });
 
