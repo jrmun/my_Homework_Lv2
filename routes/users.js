@@ -4,6 +4,22 @@ const User = require("../schemas/user.js");
 
 router.post("/users", async (req, res) => {
   const { email, nickname, password, confirmPassword } = req.body;
+  const regExp1 = /^[a-zA-z0-9]{3,12}$/;
+  const regExp2 =
+    /^[A-Za-z0-9`~!@#\$%\^&\*\(\)\{\}\[\]\-_=\+\\|;:'"<>,\./\?]{4,16}$/;
+  if (!regExp1.test(nickname)) {
+    res.status(400).json({
+      errorMessage: "닉네임은 영문 대소문자와 숫자 3~12자리로 입력해주세요.",
+    });
+    return;
+  }
+
+  if (!regExp2.test(password) || password.includes(nickname)) {
+    res.status(400).json({
+      errorMessage: "비밀번호 오류",
+    });
+    return;
+  }
 
   if (password !== confirmPassword) {
     res.status(400).json({
