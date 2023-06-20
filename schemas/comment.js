@@ -10,10 +10,6 @@ const commentSchemas = new mongoose.Schema({
     type: String,
     unique: false,
   },
-  post_cmtId: {
-    type: Number,
-    required: true,
-  },
   cmtName: {
     type: String,
     required: true,

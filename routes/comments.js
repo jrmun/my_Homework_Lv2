@@ -4,7 +4,7 @@ const comment = require("../schemas/comment.js");
 const authMiddleware = require("../middlewares/auth-middleware.js");
 const posts = require("../schemas/post.js");
 
-router.get("/posts/:postId/comment", async (req, res) => {
+router.get("/comment/:postId", async (req, res) => {
   const { postId } = req.params;
   try {
     const commentList = await comment.find({ postId: postId });
@@ -24,20 +24,18 @@ router.get("/posts/:postId/comment", async (req, res) => {
   }
 });
 
-router.post("/posts/:postId/comment", authMiddleware, async (req, res) => {
+router.post("/comment/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { cmtSubstance } = req.body;
   const cmtDate = new Date();
   const maxcmtIdByUserId = await comment.findOne().sort("-cmtId").exec();
   const cmtId = maxcmtIdByUserId ? maxcmtIdByUserId.cmtId + 1 : 1;
-  const post_cmtId = postId + cmtId;
   const cmtName = res.locals.user.nickname;
   const userId = res.locals.user._id;
   if (cmtSubstance.length !== 0) {
     const createdcomment = await comment.create({
       cmtId,
       postId,
-      post_cmtId,
       cmtName,
       cmtSubstance,
       cmtDate,
@@ -51,16 +49,20 @@ router.post("/posts/:postId/comment", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/posts/:post_cmtId/comment/", authMiddleware, async (req, res) => {
-  const { post_cmtId } = req.params;
+router.put("/comment/:postId/:cmtId", authMiddleware, async (req, res) => {
+  const { postId, cmtId } = req.params;
+  console.log(cmtId, postId);
   const { cmtSubstance } = req.body;
   const userId = res.locals.user._id;
-  const existscomment = await comment.find({ post_cmtId: Number(post_cmtId) });
+  const existscomment = await comment.find({
+    postId: Number(postId),
+    cmtId: Number(cmtId),
+  });
   if (existscomment.length) {
     if (existscomment[0].userId === String(userId)) {
       if (cmtSubstance.length !== 0) {
         await comment.updateOne(
-          { post_cmtId: Number(post_cmtId) },
+          { cmtId: Number(cmtId) },
           { $set: { cmtSubstance } }
         );
         res.json({ success: true });
@@ -73,24 +75,21 @@ router.put("/posts/:post_cmtId/comment/", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete(
-  "/posts/:post_cmtId/comment",
-  authMiddleware,
-  async (req, res) => {
-    const { post_cmtId } = req.params;
-    const userId = res.locals.user._id;
-    const existscomment = await comment.find({
-      post_cmtId: Number(post_cmtId),
-    });
-    if (existscomment.length > 0) {
-      if (existscomment[0].userId === String(userId)) {
-        await comment.deleteOne({ post_cmtId });
-        res.json({ result: "success" });
-      } else {
-        res.json({ result: "false", errorMessage: "비밀번호 오류" });
-      }
+router.delete("/comment/:postId/:cmtId", authMiddleware, async (req, res) => {
+  const { postId, cmtId } = req.params;
+  const userId = res.locals.user._id;
+  const existscomment = await comment.find({
+    postId: Number(postId),
+    cmtId: Number(cmtId),
+  });
+  if (existscomment.length > 0) {
+    if (existscomment[0].userId === String(userId)) {
+      await comment.deleteOne({ cmtId });
+      res.json({ result: "success" });
+    } else {
+      res.json({ result: "false", errorMessage: "비밀번호 오류" });
     }
   }
-);
+});
 
 module.exports = router;
