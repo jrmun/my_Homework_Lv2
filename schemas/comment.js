@@ -7,6 +7,10 @@ const commentSchemas = new mongoose.Schema({
     unique: true,
   },
   postId: {
+    type: String,
+    unique: false,
+  },
+  post_cmtId: {
     type: Number,
     required: true,
   },
