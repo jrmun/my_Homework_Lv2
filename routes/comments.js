@@ -32,16 +32,16 @@ router.post("/posts/:postId/comment", authMiddleware, async (req, res) => {
   const cmtId = maxcmtIdByUserId ? maxcmtIdByUserId.cmtId + 1 : 1;
   const post_cmtId = postId + cmtId;
   const cmtName = res.locals.user.nickname;
-  const password = res.locals.user.password;
+  const userId = res.locals.user._id;
   if (cmtSubstance.length !== 0) {
     const createdcomment = await comment.create({
       cmtId,
       postId,
       post_cmtId,
       cmtName,
-      password,
       cmtSubstance,
       cmtDate,
+      userId,
     });
     res.json({ posts: createdcomment });
   } else {
@@ -54,10 +54,10 @@ router.post("/posts/:postId/comment", authMiddleware, async (req, res) => {
 router.put("/posts/:post_cmtId/comment/", authMiddleware, async (req, res) => {
   const { post_cmtId } = req.params;
   const { cmtSubstance } = req.body;
-  const password = res.locals.user.password;
+  const userId = res.locals.user._id;
   const existscomment = await comment.find({ post_cmtId: Number(post_cmtId) });
   if (existscomment.length) {
-    if (existscomment[0].password === password) {
+    if (existscomment[0].userId === String(userId)) {
       if (cmtSubstance.length !== 0) {
         await comment.updateOne(
           { post_cmtId: Number(post_cmtId) },
@@ -78,12 +78,12 @@ router.delete(
   authMiddleware,
   async (req, res) => {
     const { post_cmtId } = req.params;
-    const password = res.locals.user.password;
+    const userId = res.locals.user._id;
     const existscomment = await comment.find({
       post_cmtId: Number(post_cmtId),
     });
     if (existscomment.length > 0) {
-      if (existscomment[0].password === password) {
+      if (existscomment[0].userId === String(userId)) {
         await comment.deleteOne({ post_cmtId });
         res.json({ result: "success" });
       } else {

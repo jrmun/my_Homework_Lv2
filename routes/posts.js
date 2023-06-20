@@ -25,19 +25,18 @@ router.get("/posts/:postId", async (req, res) => {
 
 router.post("/posts", authMiddleware, async (req, res) => {
   const { postTitle, postContent } = req.body;
-
   const name = res.locals.user.nickname;
-  const password = res.locals.user.password;
   const date = new Date();
+  const userId = res.locals.user._id;
   const maxpostIdByUserId = await posts.findOne().sort("-postId").exec();
   const postId = maxpostIdByUserId ? maxpostIdByUserId.postId + 1 : 1;
   const createdPost = await posts.create({
     postId,
     postTitle,
     name,
-    password,
     postContent,
     date,
+    userId,
   });
 
   res.json({ posts: createdPost });
@@ -46,12 +45,10 @@ router.post("/posts", authMiddleware, async (req, res) => {
 router.put("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { postTitle, postContent } = req.body;
-
-  const password = res.locals.user.password;
-
+  const userId = res.locals.user._id;
   const existsPosts = await posts.find({ postId: postId });
   if (existsPosts.length) {
-    if (existsPosts[0].password === password) {
+    if (existsPosts[0].userId === String(userId)) {
       await posts.updateOne(
         { postId: Number(postId) },
         { $set: { postTitle, postContent } }
@@ -65,11 +62,10 @@ router.put("/posts/:postId", authMiddleware, async (req, res) => {
 
 router.delete("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
-  const password = res.locals.user.password;
-
+  const userId = res.locals.user._id;
   const existsPosts = await posts.find({ postId: Number(postId) });
   if (existsPosts.length > 0) {
-    if (existsPosts[0].password === password) {
+    if (existsPosts[0].userId === String(userId)) {
       await posts.deleteOne({ postId });
       res.json({ result: "success" });
     }
