@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../schemas/user.js");
 const jwt = require("jsonwebtoken");
 
+//로그인 기능
 router.post("/auth", async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
