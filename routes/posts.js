@@ -6,18 +6,8 @@ const authMiddleware = require("../middlewares/auth-middleware.js");
 router.get("/posts/:postId", async (req, res) => {
   const { postId } = req.params;
   try {
-    const postList = await Post.find({ postId: postId });
-    postList.sort(function (comp1, comp2) {
-      let comp1date = comp1.date;
-      let comp2date = comp2.date;
-      if (comp1date > comp2date) {
-        return -1;
-      } else if (comp1date < comp2date) {
-        return 1;
-      }
-      return 0;
-    });
-    res.status(200).json({ delail: postList });
+    const post = await Post.find({ postId: postId });
+    res.status(200).json({ delail: post });
   } catch (err) {
     console.error(err);
   }
