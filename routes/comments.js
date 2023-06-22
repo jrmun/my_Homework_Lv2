@@ -18,7 +18,6 @@ router.get("/comments/:postId", async (req, res) => {
 router.post("/comments/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { cmtSubstance } = req.body;
-  const cmtDate = new Date();
   const maxcmtIdByUserId = await Comment.findOne().sort("-cmtId").exec();
   const cmtId = maxcmtIdByUserId ? maxcmtIdByUserId.cmtId + 1 : 1;
   const cmtName = res.locals.user.nickname;
@@ -29,7 +28,6 @@ router.post("/comments/:postId", authMiddleware, async (req, res) => {
       postId,
       cmtName,
       cmtSubstance,
-      cmtDate,
       userId,
     });
     res.json({ posts: createdcomment });
