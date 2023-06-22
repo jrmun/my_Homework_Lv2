@@ -1,6 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../schemas/user.js");
+const bcrypt = require("bcrypt");
+
+const createHashPassword = (password) => {
+  bcrypt.hash(password, 5, (err, encryptedPW) => {
+    errorMessage: "비밀번호 암호화 오류";
+  });
+};
 
 router.post("/users", async (req, res) => {
   const { email, nickname, password, confirmPassword } = req.body;
@@ -37,8 +44,8 @@ router.post("/users", async (req, res) => {
     });
     return;
   }
-  
-  const user = new User({ email, nickname, password });
+  const newPassword = createHashPassword(password);
+  const user = new User({ email, nickname, password: newPassword });
   await user.save();
 
   res.status(201).json({});
