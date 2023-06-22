@@ -37,7 +37,7 @@ router.post("/users", async (req, res) => {
     });
     return;
   }
-
+  
   const user = new User({ email, nickname, password });
   await user.save();
 

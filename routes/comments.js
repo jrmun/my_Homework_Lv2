@@ -1,39 +1,30 @@
 const express = require("express");
 const router = express.Router();
-const comment = require("../schemas/comment.js");
+const Comment = require("../schemas/comment.js");
 const authMiddleware = require("../middlewares/auth-middleware.js");
-const posts = require("../schemas/post.js");
 
-router.get("/comment/:postId", async (req, res) => {
+router.get("/comments/:postId", async (req, res) => {
   const { postId } = req.params;
   try {
-    const commentList = await comment.find({ postId: postId });
-    commentList.sort(function (comp1, comp2) {
-      let comp1date = comp1.cmtDate;
-      let comp2date = comp2.cmtDate;
-      if (comp1date > comp2date) {
-        return -1;
-      } else if (comp1date < comp2date) {
-        return 1;
-      }
-      return 0;
-    });
+    const commentList = await Comment.find({ postId: postId })
+      .sort("-date")
+      .exec();
     res.status(200).json({ delail: commentList });
   } catch (err) {
     console.error(err);
   }
 });
 
-router.post("/comment/:postId", authMiddleware, async (req, res) => {
+router.post("/comments/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { cmtSubstance } = req.body;
   const cmtDate = new Date();
-  const maxcmtIdByUserId = await comment.findOne().sort("-cmtId").exec();
+  const maxcmtIdByUserId = await Comment.findOne().sort("-cmtId").exec();
   const cmtId = maxcmtIdByUserId ? maxcmtIdByUserId.cmtId + 1 : 1;
   const cmtName = res.locals.user.nickname;
   const userId = res.locals.user._id;
   if (cmtSubstance.length !== 0) {
-    const createdcomment = await comment.create({
+    const createdcomment = await Comment.create({
       cmtId,
       postId,
       cmtName,
@@ -49,19 +40,18 @@ router.post("/comment/:postId", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/comment/:postId/:cmtId", authMiddleware, async (req, res) => {
+router.put("/comments/:postId/:cmtId", authMiddleware, async (req, res) => {
   const { postId, cmtId } = req.params;
-  console.log(cmtId, postId);
   const { cmtSubstance } = req.body;
   const userId = res.locals.user._id;
-  const existscomment = await comment.find({
+  const existscomment = await Comment.find({
     postId: Number(postId),
     cmtId: Number(cmtId),
   });
   if (existscomment.length) {
     if (existscomment[0].userId === String(userId)) {
       if (cmtSubstance.length !== 0) {
-        await comment.updateOne(
+        await Comment.updateOne(
           { cmtId: Number(cmtId) },
           { $set: { cmtSubstance } }
         );
@@ -75,16 +65,16 @@ router.put("/comment/:postId/:cmtId", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete("/comment/:postId/:cmtId", authMiddleware, async (req, res) => {
+router.delete("/comments/:postId/:cmtId", authMiddleware, async (req, res) => {
   const { postId, cmtId } = req.params;
   const userId = res.locals.user._id;
-  const existscomment = await comment.find({
+  const existscomment = await Comment.find({
     postId: Number(postId),
     cmtId: Number(cmtId),
   });
   if (existscomment.length > 0) {
     if (existscomment[0].userId === String(userId)) {
-      await comment.deleteOne({ cmtId });
+      await Comment.deleteOne({ cmtId });
       res.json({ result: "success" });
     } else {
       res.json({ result: "false", errorMessage: "비밀번호 오류" });

@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const posts = require("../schemas/post.js");
+const Post = require("../schemas/post.js");
 const authMiddleware = require("../middlewares/auth-middleware.js");
 
 router.get("/posts/:postId", async (req, res) => {
   const { postId } = req.params;
   try {
-    const postList = await posts.find({ postId: postId });
+    const postList = await Post.find({ postId: postId });
     postList.sort(function (comp1, comp2) {
       let comp1date = comp1.date;
       let comp2date = comp2.date;
@@ -24,29 +24,30 @@ router.get("/posts/:postId", async (req, res) => {
 });
 
 router.post("/posts", authMiddleware, async (req, res) => {
-  const { postTitle, postContent } = req.body;
-  const name = res.locals.user.nickname;
-  const date = new Date();
-  const userId = res.locals.user._id;
-  const maxpostIdByUserId = await posts.findOne().sort("-postId").exec();
-  const postId = maxpostIdByUserId ? maxpostIdByUserId.postId + 1 : 1;
-  const createdPost = await posts.create({
-    postId,
-    postTitle,
-    name,
-    postContent,
-    date,
-    userId,
-  });
-
-  res.json({ posts: createdPost });
+  try {
+    const { postTitle, postContent } = req.body;
+    const name = res.locals.user.nickname;
+    const userId = res.locals.user._id;
+    const maxpostIdByUserId = await Post.findOne().sort("-postId").exec();
+    const postId = maxpostIdByUserId ? maxpostIdByUserId.postId + 1 : 1;
+    const createdPost = await Post.create({
+      postId,
+      postTitle,
+      name,
+      postContent,
+      userId,
+    });
+    res.json({ posts: createdPost });
+  } catch {
+    res.json({ result: "false", errorMessage: "제목과 내용을 입력해주세요." });
+  }
 });
 
 router.put("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { postTitle, postContent } = req.body;
   const userId = res.locals.user._id;
-  const existsPosts = await posts.find({ postId: postId });
+  const existsPosts = await Post.find({ postId: postId });
   if (existsPosts.length) {
     if (existsPosts[0].userId === String(userId)) {
       await posts.updateOne(
@@ -55,7 +56,7 @@ router.put("/posts/:postId", authMiddleware, async (req, res) => {
       );
       res.json({ success: true });
     } else {
-      res.json({ success: false, errorMessage: "비밀번호 오류" });
+      res.json({ success: false, errorMessage: "아이디 정보가 다릅니다." });
     }
   }
 });
@@ -63,14 +64,14 @@ router.put("/posts/:postId", authMiddleware, async (req, res) => {
 router.delete("/posts/:postId", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const userId = res.locals.user._id;
-  const existsPosts = await posts.find({ postId: Number(postId) });
+  const existsPosts = await Post.find({ postId: Number(postId) });
   if (existsPosts.length > 0) {
     if (existsPosts[0].userId === String(userId)) {
       await posts.deleteOne({ postId });
       res.json({ result: "success" });
     }
   } else {
-    res.json({ result: "false", errorMessage: "비밀번호 오류" });
+    res.json({ result: "false", errorMessage: "아이디 정보가 다릅니다." });
   }
 });
 
