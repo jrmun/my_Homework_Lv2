@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../schemas/user.js");
+const crypto = require("crypto");
+
+const createPassword = (password) => {
+  return crypto.createHash("sha512").update(password).digest("base64");
+};
 
 router.post("/users", async (req, res) => {
   const { email, nickname, password, confirmPassword } = req.body;
@@ -37,11 +42,11 @@ router.post("/users", async (req, res) => {
     });
     return;
   }
-  
-  const user = new User({ email, nickname, password });
+  const newPassword = createPassword(password);
+  const user = new User({ email, nickname, password: newPassword });
   await user.save();
 
-  res.status(201).json({});
+  res.status(201).json({ result: "true" });
 });
 
 module.exports = router;
